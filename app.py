@@ -44,28 +44,26 @@ with tab1:
         best_worst = st.text_area("Best / Worst parts of class?")
         
         if st.form_submit_button("Save Yoga Evaluation"):
-            # 1. Read the YogaData sheet (ttl=0 bypasses the cache)
-            df_yoga = conn.read(worksheet="YogaData", ttl=0)
+            # 1. Read the sheet and strip away the hundreds of blank Google Sheet rows
+            df_yoga = conn.read(worksheet="YogaData", ttl=0).dropna(how="all")
             
-            # 2. Find the index of the absolute last row in the dataframe (Zapier's most recent entry)
+            # 2. Find the index of the absolute last row (Zapier's most recent entry)
             last_index = df_yoga.index[-1]
             
-            # 3. Update the specific blank columns in that row
-            # Ensure these string names match your Google Sheet column headers exactly
-            df_yoga.at[last_index, 'Rating'] = rating
-            df_yoga.at[last_index, 'Verbal Cues'] = verbal
-            df_yoga.at[last_index, 'Choreography'] = choreo
-            df_yoga.at[last_index, 'Music'] = music
-            df_yoga.at[last_index, 'Friendliness'] = friendly
-            df_yoga.at[last_index, 'Injuries/Pain'] = injuries
-            df_yoga.at[last_index, 'Target Postures'] = target_postures
-            df_yoga.at[last_index, 'Best/Worst Parts'] = best_worst
+            # 3. Update the specific columns using .loc (which safely creates missing columns)
+            df_yoga.loc[last_index, 'Rating'] = rating
+            df_yoga.loc[last_index, 'Verbal Cues'] = verbal
+            df_yoga.loc[last_index, 'Choreography'] = choreo
+            df_yoga.loc[last_index, 'Music'] = music
+            df_yoga.loc[last_index, 'Friendliness'] = friendly
+            df_yoga.loc[last_index, 'Injuries/Pain'] = injuries
+            df_yoga.loc[last_index, 'Target Postures'] = target_postures
+            df_yoga.loc[last_index, 'Best/Worst Parts'] = best_worst
             
             # 4. Push the fully updated dataframe back to Google Sheets
             conn.update(worksheet="YogaData", data=df_yoga)
             
             st.success("✅ Yoga Review successfully synced to Google Sheets!")
-
 # --- TAB 2: DAILY METRICS ---
 with tab2:
     st.header("Daily Body Metrics")
