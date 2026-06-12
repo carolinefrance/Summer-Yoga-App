@@ -44,13 +44,24 @@ with tab1:
         best_worst = st.text_area("Best / Worst parts of class?")
         
         if st.form_submit_button("Save Yoga Evaluation"):
-            # 1. Read the sheet and strip away the hundreds of blank Google Sheet rows
+            # 1. Read the sheet
             df_yoga = conn.read(worksheet="YogaData", ttl=0).dropna(how="all")
-            
-            # 2. Find the index of the absolute last row (Zapier's most recent entry)
             last_index = df_yoga.index[-1]
             
-            # 3. Update the specific columns using .loc (which safely creates missing columns)
+            # 2. Tell Pandas that these columns will hold text (object type)
+            cols_to_update = [
+                'Rating', 'Verbal Cues', 'Choreography', 'Music', 
+                'Friendliness', 'Injuries/Pain', 'Target Postures', 'Best/Worst Parts'
+            ]
+            
+            for col in cols_to_update:
+                # If the column doesn't exist yet, create it
+                if col not in df_yoga.columns:
+                    df_yoga[col] = None
+                # Force the column to accept text strings
+                df_yoga[col] = df_yoga[col].astype('object')
+            
+            # 3. Update the specific columns safely
             df_yoga.loc[last_index, 'Rating'] = rating
             df_yoga.loc[last_index, 'Verbal Cues'] = verbal
             df_yoga.loc[last_index, 'Choreography'] = choreo
@@ -60,10 +71,11 @@ with tab1:
             df_yoga.loc[last_index, 'Target Postures'] = target_postures
             df_yoga.loc[last_index, 'Best/Worst Parts'] = best_worst
             
-            # 4. Push the fully updated dataframe back to Google Sheets
+            # 4. Push back to Google Sheets
             conn.update(worksheet="YogaData", data=df_yoga)
             
             st.success("✅ Yoga Review successfully synced to Google Sheets!")
+            
 # --- TAB 2: DAILY METRICS ---
 with tab2:
     st.header("Daily Body Metrics")
